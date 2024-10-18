@@ -1,6 +1,7 @@
 set(SOURCES
     main.cpp
     peer.cpp
+    fileHandler.cpp
 )
 
 add_executable(n1nja ${SOURCES})

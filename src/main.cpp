@@ -14,12 +14,10 @@ int main(int argc, char *argv[])
     {
         if (mode == "server")
         {
-            std::thread serverThread(&Peer::runServer, &peer);
+            peer.runServer();
             std::cout << "Press Enter to stop the server..." << std::endl;
-            // std::cin.get();
-            // std::cout << "END\n";
-            // peer.stop();
-            serverThread.join();
+            std::cin.get();
+            peer.stop();
         }
         else if (mode == "client")
         {

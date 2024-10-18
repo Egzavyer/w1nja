@@ -1,4 +1,5 @@
 #include "../include/peer.h"
+#include "../include/fileHandler.h"
 #define PORT "8080"
 
 void Peer::initWinsock()
@@ -124,6 +125,8 @@ void Peer::runClient(const char *serverIP)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
+    // FileHandler::getFiles("D:/dev/w1nja/files/*");
+
     if ((iResult = getaddrinfo(serverIP, PORT, &hints, &result)) != 0)
     {
         WSACleanup();
@@ -164,10 +167,13 @@ void Peer::runClient(const char *serverIP)
 
     int recvbuflen = BUFFER_SIZE;
 
-    const char *sendbuf = "Hello from Client!\0";
+    std::string sendbuf;
     char recvbuf[BUFFER_SIZE];
 
-    if ((iResult = send(connectSocket, sendbuf, (int)strlen(sendbuf), 0)) == SOCKET_ERROR)
+    std::cout << "Enter message: " << std::endl;
+    std::getline(std::cin, sendbuf);
+
+    if ((iResult = send(connectSocket, sendbuf.c_str(), (int)strlen(sendbuf.c_str()), 0)) == SOCKET_ERROR)
     {
         closesocket(connectSocket);
         WSACleanup();
