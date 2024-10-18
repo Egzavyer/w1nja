@@ -1,27 +1,29 @@
 #include "../include/fileHandler.h"
 
-std::vector<std::string> FileHandler::getFiles(const std::string &dirPath) // replace with QDirIterator from QT
+std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
 {
-    WIN32_FIND_DATAW ffd;
-    std::wstring path = std::wstring(dirPath.begin(), dirPath.end());
-    HANDLE hFind = FindFirstFileW(path.c_str(), &ffd);
+    std::vector<std::string> v;
 
-    if (hFind == INVALID_HANDLE_VALUE)
+    if (!std::filesystem::exists(dirPath))
     {
-        throw std::runtime_error("FindFirstFile failed: " + GetLastError());
+        std::cerr << "Error: Directory does not exist: " << dirPath << std::endl;
+        return v;
     }
 
-    do
+    try
     {
-        if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        for (const auto &entry : std::filesystem::directory_iterator(dirPath))
         {
-            _tprintf(TEXT("  %ls   <DIR>\n"), ffd.cFileName);
+            std::filesystem::path filename = entry.path();
+            std::string strFilename = filename.string();
+            v.push_back(strFilename);
+            std::cout << filename << std::endl;
         }
-        else
-        {
-            _tprintf(TEXT("  %ls \n"), ffd.cFileName);
-        }
-    } while (FindNextFileW(hFind, &ffd) != 0);
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+    }
 
-    FindClose(hFind);
+    return v;
 }

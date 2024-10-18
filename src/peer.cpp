@@ -125,7 +125,7 @@ void Peer::runClient(const char *serverIP)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    // FileHandler::getFiles("D:/dev/w1nja/files/*");
+    FileHandler::getFiles("../../../files");
 
     if ((iResult = getaddrinfo(serverIP, PORT, &hints, &result)) != 0)
     {

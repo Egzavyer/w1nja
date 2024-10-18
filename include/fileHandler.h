@@ -9,6 +9,7 @@
 #include <strsafe.h>
 #include <cstring>
 #include <vector>
+#include <filesystem>
 
 class FileHandler
 {
