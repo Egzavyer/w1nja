@@ -14,7 +14,7 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
     {
         for (const auto &entry : std::filesystem::directory_iterator(dirPath))
         {
-            std::filesystem::path filename = entry.path();
+            std::filesystem::path filename = entry.path().filename();
             std::string strFilename = filename.string();
             v.push_back(strFilename);
             std::cout << filename << std::endl;

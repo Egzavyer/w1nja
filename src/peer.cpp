@@ -189,9 +189,10 @@ void Peer::runClient(const char *serverIP)
         throw std::runtime_error("shutdown failed:" + WSAGetLastError());
     }
 
-    while ((iResult = recv(connectSocket, recvbuf, recvbuflen, 0)) > 0)
+    while ((iResult = recv(connectSocket, recvbuf, recvbuflen - 1, 0)) > 0)
     {
         std::cout << "Bytes received: " << std::to_string(iResult) << std::endl;
+        recvbuf[iResult] = '\0';
         std::cout << recvbuf << std::endl;
     }
 
@@ -226,8 +227,9 @@ void Peer::handleConnection(SOCKET client)
     int iResult, iSendResult;
     int recvbuflen = BUFFER_SIZE;
 
-    while ((iResult = recv(client, recvbuf, recvbuflen, 0)) > 0)
+    while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
     {
+        recvbuf[iResult] = '\0';
         std::cout << "Bytes received: " << iResult << std::endl;
         if ((iSendResult = send(client, recvbuf, iResult, 0)) == SOCKET_ERROR)
         {
