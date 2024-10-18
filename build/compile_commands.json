@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/dev/cppProjects/w1nja/build/src",
+  "command": "C:/msys64/ucrt64/bin/g++.exe  @CMakeFiles/n1nja.dir/includes_CXX.rsp -g -std=gnu++17 -Wall -Wextra -pedantic -o CMakeFiles/n1nja.dir/main.cpp.obj -c C:/dev/cppProjects/w1nja/src/main.cpp",
+  "file": "C:/dev/cppProjects/w1nja/src/main.cpp",
+  "output": "src/CMakeFiles/n1nja.dir/main.cpp.obj"
+},
+{
+  "directory": "C:/dev/cppProjects/w1nja/build/src",
+  "command": "C:/msys64/ucrt64/bin/g++.exe  @CMakeFiles/n1nja.dir/includes_CXX.rsp -g -std=gnu++17 -Wall -Wextra -pedantic -o CMakeFiles/n1nja.dir/peer.cpp.obj -c C:/dev/cppProjects/w1nja/src/peer.cpp",
+  "file": "C:/dev/cppProjects/w1nja/src/peer.cpp",
+  "output": "src/CMakeFiles/n1nja.dir/peer.cpp.obj"
+}
+]
