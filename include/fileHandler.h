@@ -16,7 +16,7 @@ class FileHandler
 {
 public:
     static std::vector<std::string> getFiles(const std::string &dirPath);
-    static void readFromFile(const std::string &dirPath, const std::string &filename, char buf[1024]);
+    static std::string readFromFile(const std::string &dirPath, const std::string &filename);
 };
 
 #endif /* FILE_HANDLER_H*/

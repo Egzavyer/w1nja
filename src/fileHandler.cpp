@@ -27,10 +27,14 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
     return v;
 }
 
-void FileHandler::readFromFile(const std::string &dirPath, const std::string &filename, char buf[1024])
+std::string FileHandler::readFromFile(const std::string &dirPath, const std::string &filename)
 {
     std::cout << "Reading file " + dirPath + '/' + filename << std::endl;
-    std::ifstream file(dirPath + '/' + filename, std::ios::binary);
-    file.get(buf, 1023);
-    std::cout << buf << std::endl;
+    std::ifstream file(dirPath + '/' + filename, std::ios::binary | std::ios::ate);
+    auto size = file.tellg();
+    std::string str(size, '\0');
+    file.seekg(0);
+    file.read(&str[0], size);
+    // std::cout << str << '\n';
+    return str;
 }

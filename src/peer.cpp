@@ -1,5 +1,6 @@
 #include "../include/peer.h"
 #include "../include/fileHandler.h"
+#include <MSWSock.h>
 #define PORT "8080"
 
 void Peer::errHandler(const std::string &errLocation)
@@ -197,10 +198,12 @@ void Peer::runClient(const char *serverIP)
         throw std::runtime_error("shutdown failed:" + WSAGetLastError());
     }
 
+    std::ofstream outf{"output.exe", std::ios::out | std::ios::app};
     while ((iResult = recv(connectSocket, recvbuf, recvbuflen - 1, 0)) > 0)
     {
         std::cout << "Bytes received: " << std::to_string(iResult) << std::endl;
         recvbuf[iResult] = '\0';
+        outf << recvbuf;
         std::cout << recvbuf << std::endl;
     }
 
@@ -237,9 +240,6 @@ void Peer::handleConnection(SOCKET client)
     int recvbuflen = BUFFER_SIZE;
     std::vector<std::string> files;
 
-    files = FileHandler::getFiles("../../../files");
-    FileHandler::readFromFile("../../../files", "hello.txt", sendbuf);
-
     while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
     {
         // client sends initial request to server (see avail files)
@@ -251,15 +251,24 @@ void Peer::handleConnection(SOCKET client)
         std::cout << "Bytes received: " << iResult << std::endl;
         std::cout << recvbuf << std::endl;
 
-        int sendbuflen = strlen(sendbuf);
-        if ((iSendResult = send(client, sendbuf, sendbuflen, 0)) == SOCKET_ERROR)
-        {
-            closesocket(client);
-            WSACleanup();
-            throw std::runtime_error("send failed: " + WSAGetLastError());
-        }
+        files = FileHandler::getFiles("../../../files");
+        std::string contents = FileHandler::readFromFile("../../../files", "helloworld.exe");
 
-        std::cout << "Bytes sent: " << iSendResult << std::endl;
+        do
+        {
+            strcpy_s(sendbuf, 1024, contents.substr(0, 1023).c_str());
+            contents = contents.substr(strlen(sendbuf));
+
+            int sendbuflen = strlen(sendbuf);
+            if ((iSendResult = send(client, sendbuf, sendbuflen, 0)) == SOCKET_ERROR)
+            {
+                closesocket(client);
+                WSACleanup();
+                throw std::runtime_error("send failed: " + WSAGetLastError());
+            }
+
+            std::cout << "Bytes sent: " << iSendResult << std::endl;
+        } while (contents.length() > 0);
     }
 
     if (iResult == 0)
