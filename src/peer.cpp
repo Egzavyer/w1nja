@@ -135,8 +135,6 @@ void Peer::runClient(const char *serverIP)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    FileHandler::getFiles("../../../files");
-
     if ((iResult = getaddrinfo(serverIP, PORT, &hints, &result)) != 0)
     {
         WSACleanup();
@@ -234,16 +232,27 @@ void Peer::stop()
 void Peer::handleConnection(SOCKET client)
 {
     char recvbuf[BUFFER_SIZE];
+    char sendbuf[BUFFER_SIZE];
     int iResult, iSendResult;
     int recvbuflen = BUFFER_SIZE;
+    std::vector<std::string> files;
+
+    files = FileHandler::getFiles("../../../files");
+    FileHandler::readFromFile("../../../files", "hello.txt", sendbuf);
 
     while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
     {
+        // client sends initial request to server (see avail files)
+        // server parses request, responds accordingly (sends list of avail files)
+        // if file list too big, send chunks until end of vector
+        // client sends request for a file
+        // server sends file over
         recvbuf[iResult] = '\0';
         std::cout << "Bytes received: " << iResult << std::endl;
         std::cout << recvbuf << std::endl;
 
-        if ((iSendResult = send(client, recvbuf, iResult, 0)) == SOCKET_ERROR)
+        int sendbuflen = strlen(sendbuf);
+        if ((iSendResult = send(client, sendbuf, sendbuflen, 0)) == SOCKET_ERROR)
         {
             closesocket(client);
             WSACleanup();

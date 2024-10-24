@@ -24,6 +24,13 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
     {
         std::cerr << "Filesystem error: " << e.what() << std::endl;
     }
-
     return v;
+}
+
+void FileHandler::readFromFile(const std::string &dirPath, const std::string &filename, char buf[1024])
+{
+    std::cout << "Reading file " + dirPath + '/' + filename << std::endl;
+    std::ifstream file(dirPath + '/' + filename, std::ios::binary);
+    file.get(buf, 1023);
+    std::cout << buf << std::endl;
 }
