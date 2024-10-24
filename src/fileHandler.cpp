@@ -29,12 +29,27 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
 
 std::string FileHandler::readFromFile(const std::string &dirPath, const std::string &filename)
 {
-    std::cout << "Reading file " + dirPath + '/' + filename << std::endl;
-    std::ifstream file(dirPath + '/' + filename, std::ios::binary | std::ios::ate);
+    std::string fullPath = dirPath + '/' + filename;
+    std::cout << "Reading file: " << fullPath << std::endl;
+
+    std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
+    if (!file)
+    {
+        throw std::runtime_error("Cannot open file: " + fullPath);
+    }
+
     auto size = file.tellg();
+    if (size == -1)
+    {
+        throw std::runtime_error("Could not determine file size");
+    }
+
     std::string str(size, '\0');
     file.seekg(0);
-    file.read(&str[0], size);
-    // std::cout << str << '\n';
+    if (!file.read(&str[0], size))
+    {
+        throw std::runtime_error("Failed to read file contents");
+    }
+
     return str;
 }

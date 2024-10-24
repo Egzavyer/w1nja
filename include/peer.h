@@ -2,6 +2,7 @@
 #define PEER_H
 #pragma once
 
+#define NOMINMAX
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
@@ -16,6 +17,8 @@
 #include <thread>
 #include <unordered_map>
 #include <iostream>
+#include <MSWSock.h>
+#include <algorithm>
 
 class Peer
 {

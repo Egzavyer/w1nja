@@ -1,6 +1,5 @@
 #include "../include/peer.h"
 #include "../include/fileHandler.h"
-#include <MSWSock.h>
 #define PORT "8080"
 
 void Peer::errHandler(const std::string &errLocation)
@@ -175,56 +174,62 @@ void Peer::runClient(const char *serverIP)
     }
 
     int recvbuflen = BUFFER_SIZE;
-
-    std::string sendbuf;
     char recvbuf[BUFFER_SIZE];
 
-    std::cout << "Enter message: " << std::endl;
-    std::getline(std::cin, sendbuf);
-
-    if ((iResult = send(connectSocket, sendbuf.c_str(), (int)strlen(sendbuf.c_str()), 0)) == SOCKET_ERROR)
+    try
     {
+        std::ofstream outf{"output.exe", std::ios::binary | std::ios::out};
+        if (!outf)
+        {
+            throw std::runtime_error("Failed to open output file");
+        }
+
+        std::string sendbuf;
+        std::cout << "Enter message: " << std::endl;
+        std::getline(std::cin, sendbuf);
+
+        if ((iResult = send(connectSocket, sendbuf.c_str(), (int)strlen(sendbuf.c_str()), 0)) == SOCKET_ERROR)
+        {
+            throw std::runtime_error("send failed: " + std::to_string(WSAGetLastError()));
+        }
+
+        std::cout << "Bytes sent: " << iResult << std::endl;
+
+        while ((iResult = recv(connectSocket, recvbuf, recvbuflen, 0)) > 0)
+        {
+            std::cout << "Bytes received: " << iResult << std::endl;
+
+            if (!outf.write(recvbuf, iResult))
+            {
+                throw std::runtime_error("Failed to write to file");
+            }
+        }
+        outf.close();
+
+        if (iResult == 0)
+        {
+            std::cout << "Connection closed normally" << std::endl;
+        }
+        else if (iResult == SOCKET_ERROR)
+        {
+            throw std::runtime_error("recv failed: " + std::to_string(WSAGetLastError()));
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
         closesocket(connectSocket);
         WSACleanup();
-        throw std::runtime_error("send failed:" + WSAGetLastError());
+        return;
     }
 
-    std::cout << "Bytes sent: " << std::to_string(iResult) << std::endl;
-
-    if ((iResult = shutdown(connectSocket, SD_SEND)) == SOCKET_ERROR)
+    if (shutdown(connectSocket, SD_SEND) == SOCKET_ERROR)
     {
-        closesocket(connectSocket);
-        WSACleanup();
-        throw std::runtime_error("shutdown failed:" + WSAGetLastError());
-    }
-
-    std::ofstream outf{"output.exe", std::ios::out | std::ios::app};
-    while ((iResult = recv(connectSocket, recvbuf, recvbuflen - 1, 0)) > 0)
-    {
-        std::cout << "Bytes received: " << std::to_string(iResult) << std::endl;
-        recvbuf[iResult] = '\0';
-        outf << recvbuf;
-        std::cout << recvbuf << std::endl;
-    }
-
-    if (iResult == 0)
-    {
-        std::cout << "Connection closed" << std::endl;
-    }
-    else
-    {
-        throw std::runtime_error("recv failed:" + WSAGetLastError());
-    }
-
-    if ((iResult = shutdown(connectSocket, SD_SEND)) == SOCKET_ERROR)
-    {
-        closesocket(connectSocket);
-        WSACleanup();
-        throw std::runtime_error("shutdown failed:" + WSAGetLastError());
+        std::cerr << "shutdown failed: " + std::to_string(WSAGetLastError()) << std::endl;
     }
 
     closesocket(connectSocket);
-    WSACleanup();
+    WSAGetLastError();
 }
 
 void Peer::stop()
@@ -240,46 +245,62 @@ void Peer::handleConnection(SOCKET client)
     int recvbuflen = BUFFER_SIZE;
     std::vector<std::string> files;
 
-    while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
+    try
     {
-        // client sends initial request to server (see avail files)
-        // server parses request, responds accordingly (sends list of avail files)
-        // if file list too big, send chunks until end of vector
-        // client sends request for a file
-        // server sends file over
-        recvbuf[iResult] = '\0';
-        std::cout << "Bytes received: " << iResult << std::endl;
-        std::cout << recvbuf << std::endl;
-
-        files = FileHandler::getFiles("../../../files");
-        std::string contents = FileHandler::readFromFile("../../../files", "helloworld.exe");
-
-        do
+        while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
         {
-            strcpy_s(sendbuf, 1024, contents.substr(0, 1023).c_str());
-            contents = contents.substr(strlen(sendbuf));
+            // client sends initial request to server (see avail files)
+            // server parses request, responds accordingly (sends list of avail files)
+            // if file list too big, send chunks until end of vector
+            // client sends request for a file
+            // server sends file over
+            recvbuf[iResult] = '\0';
+            std::cout << "Bytes received: " << iResult << std::endl;
+            std::cout << recvbuf << std::endl;
 
-            int sendbuflen = strlen(sendbuf);
-            if ((iSendResult = send(client, sendbuf, sendbuflen, 0)) == SOCKET_ERROR)
+            std::string contents;
+            files = FileHandler::getFiles("../../../files");
+            try
             {
-                closesocket(client);
-                WSACleanup();
-                throw std::runtime_error("send failed: " + WSAGetLastError());
+                contents = FileHandler::readFromFile("../../../files", "helloworld.exe");
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Failed to read file: " << e.what() << std::endl;
+                break;
             }
 
-            std::cout << "Bytes sent: " << iSendResult << std::endl;
-        } while (contents.length() > 0);
-    }
+            size_t totalSent = 0;
+            while (totalSent < contents.size())
+            {
+                size_t remaining = contents.size() - totalSent;
+                size_t chunkSize = std::min(remaining, static_cast<size_t>(BUFFER_SIZE - 1));
 
-    if (iResult == 0)
-    {
-        std::cout << "Connection closing..." << std::endl;
+                memcpy(sendbuf, contents.c_str() + totalSent, chunkSize);
+
+                if ((iSendResult = send(client, sendbuf, static_cast<int>(chunkSize), 0)) == SOCKET_ERROR)
+                {
+                    throw std::runtime_error("send failed: " + std::to_string(WSAGetLastError()));
+                }
+
+                std::cout << "Bytes sent: " << iSendResult << std::endl;
+                totalSent += iSendResult;
+            }
+            std::cout << "Total bytes sent: " << totalSent << std::endl;
+        }
+
+        if (iResult == 0)
+        {
+            std::cout << "Connection closing..." << std::endl;
+        }
+        else if (iResult < 0)
+        {
+            throw std::runtime_error("recv failed: " + std::to_string(WSAGetLastError()));
+        }
     }
-    else
+    catch (const std::exception &e)
     {
-        closesocket(client);
-        WSACleanup();
-        throw std::runtime_error("recv failed: " + WSAGetLastError());
+        std::cerr << "Error in handleConnection: " << e.what() << std::endl;
     }
 
     if ((iResult = shutdown(client, SD_SEND)) == SOCKET_ERROR)
