@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdexcept>
 #include <errno.h>
+#include <stdio.h>
 #include <string>
 #include <cstring>
 #include <atomic>
@@ -26,6 +27,7 @@ private:
     static void initWinsock();
     static SOCKET createSocket();
     static void handleConnection(SOCKET client);
+    static void errHandler(const std::string &errLocation);
 
 public:
     void runServer();

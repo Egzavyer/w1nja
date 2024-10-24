@@ -2,6 +2,14 @@
 #include "../include/fileHandler.h"
 #define PORT "8080"
 
+void Peer::errHandler(const std::string &errLocation)
+{
+    const size_t errmsglen = 256;
+    char errmsg[errmsglen];
+    strerror_s(errmsg, errmsglen, errno);
+    throw std::runtime_error(errLocation + std::string(errmsg));
+}
+
 void Peer::initWinsock()
 {
     WSADATA wsaData;
@@ -10,7 +18,7 @@ void Peer::initWinsock()
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0)
     {
-        throw std::runtime_error("WSAStartup failed: " + std::string(strerror(errno)));
+        errHandler("WSAStartup failed: ");
     }
 }
 
@@ -32,7 +40,7 @@ SOCKET Peer::createSocket()
     if (iResult != 0)
     {
         WSACleanup();
-        throw std::runtime_error("getaddrinfo failed: " + std::string(strerror(errno)));
+        errHandler("getaddrinfo failed: ");
     }
 
     // Create a SOCKET for the server to listen for client connections
@@ -63,6 +71,7 @@ void Peer::runServer()
 {
     SOCKET sock = createSocket();
     SOCKET clientSock = INVALID_SOCKET;
+    char ipBuf[INET_ADDRSTRLEN];
 
     if (listen(sock, SOMAXCONN) == SOCKET_ERROR)
     {
@@ -79,7 +88,7 @@ void Peer::runServer()
     {
         int local_port = ntohs(sin.sin_port);
 
-        std::cout << "Server listening on " << inet_ntoa(sin.sin_addr) << ":" << local_port << " on socket: " << sock << std::endl;
+        std::cout << "Server listening on " << inet_ntop(AF_INET, &sin.sin_addr, ipBuf, INET_ADDRSTRLEN) << ":" << local_port << " on socket: " << sock << std::endl;
     }
 
     while (running)
@@ -95,7 +104,7 @@ void Peer::runServer()
         int namelen = sizeof(sockaddr);
         if (!getpeername(clientSock, (struct sockaddr *)&sockaddr, &namelen))
         {
-            printf("Accepted connection from: %s\n", inet_ntoa((in_addr)(*(in_addr *)&sockaddr.sin_addr.S_un.S_addr)));
+            printf("Accepted connection from: %s\n", inet_ntop(AF_INET, &sockaddr.sin_addr, ipBuf, INET_ADDRSTRLEN));
         }
 
         connections[clientSock] = std::thread(&Peer::handleConnection, clientSock);
@@ -118,6 +127,7 @@ void Peer::runClient(const char *serverIP)
     initWinsock();
     struct addrinfo *result = NULL, *ptr = NULL, hints;
     int iResult;
+    char ipBuf[INET_ADDRSTRLEN];
     SOCKET connectSocket = INVALID_SOCKET;
 
     ZeroMemory(&hints, sizeof(hints));
@@ -153,7 +163,7 @@ void Peer::runClient(const char *serverIP)
     int namelen = sizeof(sockaddr);
     if (!getpeername(connectSocket, (struct sockaddr *)&sockaddr, &namelen))
     {
-        printf("Connected to: %s\n", inet_ntoa((in_addr)(*(in_addr *)&sockaddr.sin_addr.S_un.S_addr)));
+        printf("Connected to: %s\n", inet_ntop(AF_INET, &sockaddr.sin_addr, ipBuf, INET_ADDRSTRLEN));
     }
 
     // should try to connect to the next address from getaddrinfo if fails
@@ -231,6 +241,8 @@ void Peer::handleConnection(SOCKET client)
     {
         recvbuf[iResult] = '\0';
         std::cout << "Bytes received: " << iResult << std::endl;
+        std::cout << recvbuf << std::endl;
+
         if ((iSendResult = send(client, recvbuf, iResult, 0)) == SOCKET_ERROR)
         {
             closesocket(client);
