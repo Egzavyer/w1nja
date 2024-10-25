@@ -2,6 +2,8 @@ set(SOURCES
     main.cpp
     peer.cpp
     fileHandler.cpp
+    requestParser.cpp
+    request.cpp
 )
 
 add_executable(n1nja ${SOURCES})
