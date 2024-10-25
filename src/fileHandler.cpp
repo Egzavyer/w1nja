@@ -1,13 +1,13 @@
 #include "../include/fileHandler.h"
 
-std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
+std::string FileHandler::getFiles(const std::string &dirPath)
 {
-    std::vector<std::string> v;
+    std::string files;
 
     if (!std::filesystem::exists(dirPath))
     {
         std::cerr << "Error: Directory does not exist: " << dirPath << std::endl;
-        return v;
+        return files;
     }
 
     try
@@ -16,7 +16,7 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
         {
             std::filesystem::path filename = entry.path().filename();
             std::string strFilename = filename.string();
-            v.push_back(strFilename);
+            files += strFilename + '\n';
             std::cout << filename << std::endl;
         }
     }
@@ -24,7 +24,7 @@ std::vector<std::string> FileHandler::getFiles(const std::string &dirPath)
     {
         std::cerr << "Filesystem error: " << e.what() << std::endl;
     }
-    return v;
+    return files;
 }
 
 std::string FileHandler::readFromFile(const std::string &dirPath, const std::string &filename)

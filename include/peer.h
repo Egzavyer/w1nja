@@ -31,6 +31,7 @@ private:
     static SOCKET createSocket();
     static void handleConnection(SOCKET client);
     static void errHandler(const std::string &errLocation);
+    static void sendFile(const std::string &contents, SOCKET client);
 
 public:
     void runServer();

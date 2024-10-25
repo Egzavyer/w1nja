@@ -178,6 +178,7 @@ void Peer::runClient(const char *serverIP)
 
     try
     {
+
         std::ofstream outf{"output.exe", std::ios::binary | std::ios::out};
         if (!outf)
         {
@@ -240,26 +241,24 @@ void Peer::stop()
 void Peer::handleConnection(SOCKET client)
 {
     char recvbuf[BUFFER_SIZE];
-    char sendbuf[BUFFER_SIZE];
-    int iResult, iSendResult;
+    int iRecvResult;
     int recvbuflen = BUFFER_SIZE;
-    std::vector<std::string> files;
 
     try
     {
-        while ((iResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
+        while ((iRecvResult = recv(client, recvbuf, recvbuflen - 1, 0)) > 0)
         {
             // client sends initial request to server (see avail files)
             // server parses request, responds accordingly (sends list of avail files)
-            // if file list too big, send chunks until end of vector
             // client sends request for a file
             // server sends file over
-            recvbuf[iResult] = '\0';
-            std::cout << "Bytes received: " << iResult << std::endl;
+            recvbuf[iRecvResult] = '\0';
+            std::cout << "Bytes received: " << iRecvResult << std::endl;
             std::cout << recvbuf << std::endl;
 
             std::string contents;
-            files = FileHandler::getFiles("../../../files");
+            std::string files = FileHandler::getFiles("../../../files");
+
             try
             {
                 contents = FileHandler::readFromFile("../../../files", "helloworld.exe");
@@ -270,30 +269,14 @@ void Peer::handleConnection(SOCKET client)
                 break;
             }
 
-            size_t totalSent = 0;
-            while (totalSent < contents.size())
-            {
-                size_t remaining = contents.size() - totalSent;
-                size_t chunkSize = std::min(remaining, static_cast<size_t>(BUFFER_SIZE - 1));
-
-                memcpy(sendbuf, contents.c_str() + totalSent, chunkSize);
-
-                if ((iSendResult = send(client, sendbuf, static_cast<int>(chunkSize), 0)) == SOCKET_ERROR)
-                {
-                    throw std::runtime_error("send failed: " + std::to_string(WSAGetLastError()));
-                }
-
-                std::cout << "Bytes sent: " << iSendResult << std::endl;
-                totalSent += iSendResult;
-            }
-            std::cout << "Total bytes sent: " << totalSent << std::endl;
+            sendFile(contents, client);
         }
 
-        if (iResult == 0)
+        if (iRecvResult == 0)
         {
             std::cout << "Connection closing..." << std::endl;
         }
-        else if (iResult < 0)
+        else if (iRecvResult < 0)
         {
             throw std::runtime_error("recv failed: " + std::to_string(WSAGetLastError()));
         }
@@ -302,7 +285,30 @@ void Peer::handleConnection(SOCKET client)
     {
         std::cerr << "Error in handleConnection: " << e.what() << std::endl;
     }
+}
 
+void Peer::sendFile(const std::string &contents, SOCKET client)
+{
+    size_t totalSent = 0;
+    int iSendResult, iResult;
+    char sendbuf[BUFFER_SIZE];
+
+    while (totalSent < contents.size())
+    {
+        size_t remaining = contents.size() - totalSent;
+        size_t chunkSize = std::min(remaining, static_cast<size_t>(BUFFER_SIZE - 1));
+
+        memcpy(sendbuf, contents.c_str() + totalSent, chunkSize);
+
+        if ((iSendResult = send(client, sendbuf, static_cast<int>(chunkSize), 0)) == SOCKET_ERROR)
+        {
+            throw std::runtime_error("send failed: " + std::to_string(WSAGetLastError()));
+        }
+
+        std::cout << "Bytes sent: " << iSendResult << std::endl;
+        totalSent += iSendResult;
+    }
+    std::cout << "Total bytes sent: " << totalSent << std::endl;
     if ((iResult = shutdown(client, SD_SEND)) == SOCKET_ERROR)
     {
         closesocket(client);
