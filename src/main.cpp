@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
         {
             if (argc < 3)
             {
-                peer.runClient("127.0.0.1");
+                peer.runClient();
             }
             else
             {

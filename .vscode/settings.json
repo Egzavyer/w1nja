@@ -78,6 +78,13 @@
         "xlocmon": "cpp",
         "xlocnum": "cpp",
         "xloctime": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "map": "cpp",
+        "mutex": "cpp",
+        "xtree": "cpp",
+        "condition_variable": "cpp",
+        "future": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp"
     }
 }

@@ -1,11 +1,11 @@
-set(SOURCES
+set(SOURCE
     main.cpp
-    peer.cpp
-    fileHandler.cpp
-    requestParser.cpp
-    request.cpp
+    peer/peer.cpp
+    peer/connectionManager.cpp
+    peer/fileHandler.cpp
+    peer/requestHandler.cpp
 )
 
-add_executable(n1nja ${SOURCES})
+add_executable(n1nja ${SOURCE})
 
-target_link_libraries(n1nja PRIVATE ws2_32 )
+target_link_libraries(n1nja PRIVATE ws2_32)
